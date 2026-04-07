@@ -1,0 +1,59 @@
+import requests
+import time
+from datetime import datetime
+
+# ==================== CONFIGURACIÓN ====================
+# Telegram
+TELEGRAM_TOKEN = "TU_TOKEN_DE_TELEGRAM_AQUI"
+TELEGRAM_CHAT_ID = "TU_CHAT_ID_AQUI"
+
+# WhatsApp (usando CallMeBot - servicio gratuito)
+WHATSAPP_PHONE = "521XXXXXXXXXX"   # Tu número con 52 al inicio (ejemplo: 5216641234567)
+# ======================================================
+
+def enviar_telegram(mensaje):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": mensaje,
+        "parse_mode": "HTML"
+    }
+    try:
+        requests.post(url, json=payload, timeout=8)
+    except:
+        pass
+
+def enviar_whatsapp(mensaje):
+    url = f"https://api.callmebot.com/whatsapp.php?phone={WHATSAPP_PHONE}&text={mensaje}&apikey=tu_apikey_callmebot"
+    try:
+        requests.get(url, timeout=8)
+    except:
+        pass
+
+def detectar_apagon():
+    try:
+        respuesta = requests.get("https://downdetector.com.mx/status/cfe/", timeout=10)
+        texto = respuesta.text.lower()
+        
+        # Palabras clave para detectar aumento de reportes
+        if any(palabra in texto for palabra in ["apagón", "sin luz", "sin servicio", "reportes", "mexicali"]):
+            hora_actual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            mensaje = f"⚡ <b>APAGÓN DETECTADO EN MEXICALI</b>\n\nHora: {hora_actual}\nFuente: Downdetector CFE"
+            
+            enviar_telegram(mensaje)
+            enviar_whatsapp(mensaje.replace("<b>", "").replace("</b>", ""))
+            
+            print(f"[{hora_actual}] ¡Alerta de apagón enviada a Telegram y WhatsApp!")
+            return True
+    except Exception as e:
+        print(f"Error de conexión: {e}")
+    return False
+
+# ==================== INICIO DEL PROGRAMA ====================
+print("=== Detector de Apagones CFE Mexicali ===")
+print("Iniciado - Revisando cada 3 minutos")
+print("Presione Ctrl + C para detener\n")
+
+while True:
+    detectar_apagon()
+    time.sleep(180)  # 180 segundos = 3 minutos
