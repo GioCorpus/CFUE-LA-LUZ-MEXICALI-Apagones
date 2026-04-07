@@ -1,0 +1,52 @@
+from machine import Pin, ADC
+import network
+import urequests
+import utime
+
+# Configuración
+SSID = "tu_wifi"
+PASSWORD = "tu_contraseña"
+BOT_TOKEN = "tu_bot_token_aquí"
+CHAT_ID = "tu_chat_id_aquí"
+
+# Sensor de luz LDR en GPIO 28 (usa un divisor de voltaje con 10k resistor)
+ldr = ADC(28)
+
+# LED de la placa para debug
+led = Pin("LED", Pin.OUT)
+
+def connect_wifi():
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect(SSID, PASSWORD)
+    print("Conectando a WiFi...")
+    while not wlan.isconnected():
+        utime.sleep(1)
+    print("Conectado! IP:", wlan.ifconfig()[0])
+
+def send_telegram(message):
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    data = {"chat_id": CHAT_ID, "text": message}
+    try:
+        urequests.post(url, json=data)
+        print("Mensaje enviado")
+    except:
+        print("Error enviando mensaje")
+
+# Programa principal
+connect_wifi()
+led.on()
+utime.sleep(2)
+led.off()
+
+print("Detector de apagones listo...")
+
+while True:
+    luz = ldr.read_u16()  # Valor entre 0 y 65535
+    if luz < 10000:       # Ajusta este número según tu LDR (prueba de día y de noche)
+        print("¡Luz apagada! Enviando alerta...")
+        send_telegram("¡Apagón detectado en Mexicali! ⚡")
+        led.on()
+        utime.sleep(30)   # Espera 30 segundos para no spamear
+        led.off()
+    utime.sleep(5)  # Revisa cada 5 segundos
