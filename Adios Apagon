@@ -1,0 +1,19 @@
+import requests
+import time
+from datetime import datetime
+
+def checar_apagon_mexicali():
+    try:
+        r = requests.get("https://downdetector.com.mx/status/cfe/", timeout=8)
+        if "aumentaron los reportes" in r.text.lower() or "apagón" in r.text.lower():
+            print(f"[{datetime.now()}] ¡Apagón reportado en Mexicali!")
+            # Aquí puedes agregar tu envío a Telegram
+            return True
+    except:
+        pass
+    return False
+
+print("Vigilando CFE Mexicali cada 3 minutos...")
+while True:
+    checar_apagon_mexicali()
+    time.sleep(180)
